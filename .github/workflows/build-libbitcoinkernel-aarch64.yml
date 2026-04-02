@@ -23,7 +23,7 @@ jobs:
       - name: Install aarch64-linux-gnu toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake libboost-dev libboost-system-dev libboost-filesystem-dev libboost-test-dev libboost-program-options-dev libevent-dev libsqlite3-dev libzeromq-4-2-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          sudo apt-get install -y cmake libboost-dev libboost-system-dev libboost-filesystem-dev libboost-test-dev libboost-program-options-dev libevent-dev libsqlite3-dev libzmq3-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Create toolchain file
         run: |
