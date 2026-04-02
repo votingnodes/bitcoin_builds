@@ -34,10 +34,10 @@ jobs:
       - name: Build Boost for ARM64
         run: |
           cd /tmp/boost_1_87_0
-          cat > project-config.jam << 'EOF'
-          using gcc : arm : aarch64-linux-gnu-g++ : : <archiver>aarch64-linux-gnu-ar <ranlib>aarch64-linux-gnu-ranlib ;
-          EOF
-          ./b2 install variant=release link=shared runtime-link=shared address-model=64 architecture=arm -j$(nproc) --prefix=/tmp/boost-aarch64 install
+          export CXX=aarch64-linux-gnu-g++
+          export AR=aarch64-linux-gnu-ar
+          export RANLIB=aarch64-linux-gnu-ranlib
+          ./b2 install variant=release link=shared runtime-link=shared address-model=64 -j$(nproc) --prefix=/tmp/boost-aarch64 install
 
       - name: Create toolchain file
         run: |
