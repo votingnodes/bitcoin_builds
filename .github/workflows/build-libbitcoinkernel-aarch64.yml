@@ -133,9 +133,9 @@ jobs:
         run: |
           TAG="commit-${{ github.sha }}"
           RELEASE_ID=$(cat release.json | grep -o '"id": [0-9]*' | head -1 | cut -d' ' -f2)
-          for file in libbitcoinkernel.so* aarch64-linux-gnu.cmake metadata.json; do
-            curl -s -X POST "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets" \
+          for file in libbitcoinkernel.so libbitcoinkernel.so.0 aarch64-linux-gnu.cmake metadata.json; do
+            curl -s -X POST "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$(basename $file)" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Content-Type: application/octet-stream" \
-              --data-binary "@$file"
+              -T "$file"
           done
