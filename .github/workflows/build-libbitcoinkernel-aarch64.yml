@@ -37,7 +37,18 @@ jobs:
           export CXX=aarch64-linux-gnu-g++
           export AR=aarch64-linux-gnu-ar
           export RANLIB=aarch64-linux-gnu-ranlib
-          ./b2 install variant=release link=shared runtime-link=shared address-model=64 -j$(nproc) --prefix=/tmp/boost-aarch64 install
+          ./b2 variant=release link=static runtime-link=shared address-model=64 -j$(nproc) --prefix=/tmp/boost-aarch64 install
+
+      - name: Debug Boost installation
+        run: |
+          ls -la /tmp/boost-aarch64/
+          find /tmp/boost-aarch64 -name "*.hpp" | head -5
+          find /tmp/boost-aarch64 -name "*.so*" | head -5
+
+      - name: Patch AddBoostIfNeeded for module mode
+        run: |
+          cd bitcoin-core
+          sed -i 's/find_package(Boost 1.74.0 REQUIRED CONFIG)/find_package(Boost 1.74.0 REQUIRED)/' cmake/module/AddBoostIfNeeded.cmake
 
       - name: Create toolchain file
         run: |
@@ -54,6 +65,7 @@ jobs:
           set(CMAKE_C_FLAGS_INIT "-march=armv8-a")
           set(BOOST_ROOT /tmp/boost-aarch64)
           set(BOOST_INCLUDEDIR /tmp/boost-aarch64/include)
+          set(CMAKE_FIND_ROOT_PATH /tmp/boost-aarch64)
           EOF
 
       - name: Configure
