@@ -98,14 +98,15 @@ jobs:
       - name: Create metadata JSON
         run: |
           FILE="libbitcoinkernel.so"
+          FILE_INFO=$(file "$FILE" | sed 's/"/\\"/g')
           cat > metadata.json << EOF
           {
             "library": "libbitcoinkernel",
             "architecture": "aarch64",
             "file": "$FILE",
-            "size": $(stat -c%s $FILE),
-            "sha256": "$(sha256sum $FILE | cut -d' ' -f1)",
-            "arch": "$(file $FILE)",
+            "size": $(stat -c%s "$FILE"),
+            "sha256": "$(sha256sum "$FILE" | cut -d' ' -f1)",
+            "arch": "$FILE_INFO",
             "boost_version": "1.87.0",
             "bitcoin_commit": "${{ github.sha }}",
             "build_type": "RelWithDebInfo"
@@ -120,13 +121,7 @@ jobs:
           curl -s -X POST https://api.github.com/repos/${{ github.repository }}/releases \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d "{
-              'tag_name': '$TAG',
-              'name': '$TAG',
-              'body': '$BODY',
-              'draft': false,
-              'prerelease': false
-            }" > release.json
+            -d "{\"tag_name\": \"$TAG\", \"name\": \"$TAG\", \"body\": \"$BODY\", \"draft\": false, \"prerelease\": false}" > release.json
           cat release.json
 
       - name: List artifacts
