@@ -129,11 +129,18 @@ jobs:
             }" > release.json
           cat release.json
 
+      - name: List artifacts
+        run: |
+          ls -la
+
       - name: Upload assets to release
         run: |
           TAG="commit-${{ github.sha }}"
           RELEASE_ID=$(cat release.json | grep -o '"id": [0-9]*' | head -1 | cut -d' ' -f2)
-          for file in libbitcoinkernel.so libbitcoinkernel.so.0 aarch64-linux-gnu.cmake metadata.json; do
+          echo "Uploading to release $RELEASE_ID"
+          for file in *.so aarch64-linux-gnu.cmake metadata.json; do
+            [ -f "$file" ] || continue
+            echo "Uploading $file"
             curl -s -X POST "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$(basename $file)" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Content-Type: application/octet-stream" \
