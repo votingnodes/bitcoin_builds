@@ -2,11 +2,9 @@ name: Build libbitcoinkernel for aarch64
 
 on:
   push:
-    branches: [main, master]
-    tags:
-      - 'v*'
+    branches: ['*']
   pull_request:
-    branches: [main, master]
+    branches: ['*']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
