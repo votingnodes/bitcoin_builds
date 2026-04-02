@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-aarch64:
+  build:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -38,12 +38,6 @@ jobs:
           export AR=aarch64-linux-gnu-ar
           export RANLIB=aarch64-linux-gnu-ranlib
           ./b2 variant=release link=static runtime-link=shared address-model=64 -j$(nproc) --prefix=/tmp/boost-aarch64 install
-
-      - name: Debug Boost installation
-        run: |
-          ls -la /tmp/boost-aarch64/
-          find /tmp/boost-aarch64 -name "*.hpp" | head -5
-          find /tmp/boost-aarch64 -name "*.so*" | head -5
 
       - name: Patch AddBoostIfNeeded for module mode
         run: |
@@ -89,5 +83,44 @@ jobs:
         with:
           name: libbitcoinkernel-aarch64
           path: |
-            bitcoin-core/build/src/*.so*
+            bitcoin-core/build/src/libbitcoinkernel.so*
             bitcoin-core/aarch64-linux-gnu.cmake
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: libbitcoinkernel-aarch64
+
+      - name: Create metadata JSON
+        run: |
+          FILE="libbitcoinkernel.so"
+          cat > metadata.json << EOF
+          {
+            "library": "libbitcoinkernel",
+            "architecture": "aarch64",
+            "file": "$FILE",
+            "size": $(stat -c%s $FILE),
+            "sha256": "$(sha256sum $FILE | cut -d' ' -f1)",
+            "arch": "$(file $FILE)",
+            "boost_version": "1.87.0",
+            "bitcoin_commit": "${{ github.sha }}",
+            "build_type": "RelWithDebInfo"
+          }
+          EOF
+          cat metadata.json
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            libbitcoinkernel.so*
+            aarch64-linux-gnu.cmake
+            metadata.json
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
