@@ -1,0 +1,62 @@
+name: Build libbitcoinkernel for aarch64
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-aarch64:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install aarch64-linux-gnu toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libboost-dev libboost-system-dev libboost-filesystem-dev libboost-test-dev libboost-program-options-dev libevent-dev libsqlite3-dev libzeromq-4-2-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Create toolchain file
+        run: |
+          cat > aarch64-linux-gnu.cmake << 'EOF'
+          set(CMAKE_SYSTEM_NAME Linux)
+          set(CMAKE_SYSTEM_PROCESSOR aarch64)
+          set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
+          set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
+          set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+          set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+          set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+          set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+          set(CMAKE_CXX_FLAGS_INIT "-march=armv8-a")
+          set(CMAKE_C_FLAGS_INIT "-march=armv8-a")
+          EOF
+
+      - name: Configure
+        run: |
+          cmake -B build -DBUILD_KERNEL_LIB=ON \
+            -DCMAKE_TOOLCHAIN_FILE=aarch64-linux-gnu.cmake \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DENABLE_WALLET=OFF \
+            -DENABLE_IPC=OFF \
+            -DBUILD_GUI=OFF \
+            -DBUILD_TESTS=OFF
+
+      - name: Build
+        run: cmake --build build -j$(nproc) --target libbitcoinkernel
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libbitcoinkernel-aarch64
+          path: |
+            build/src/libbitcoinkernel.so*
+            build/src/*.so*
