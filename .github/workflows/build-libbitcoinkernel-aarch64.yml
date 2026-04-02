@@ -113,13 +113,29 @@ jobs:
           EOF
           cat metadata.json
 
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            libbitcoinkernel.so*
-            aarch64-linux-gnu.cmake
-            metadata.json
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release
+        run: |
+          TAG="commit-${{ github.sha }}"
+          BODY="Auto-generated release from commit ${{ github.sha }}"
+          curl -s -X POST https://api.github.com/repos/${{ github.repository }}/releases \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              'tag_name': '$TAG',
+              'name': '$TAG',
+              'body': '$BODY',
+              'draft': false,
+              'prerelease': false
+            }" > release.json
+          cat release.json
+
+      - name: Upload assets to release
+        run: |
+          TAG="commit-${{ github.sha }}"
+          RELEASE_ID=$(cat release.json | grep -o '"id": [0-9]*' | head -1 | cut -d' ' -f2)
+          for file in libbitcoinkernel.so* aarch64-linux-gnu.cmake metadata.json; do
+            curl -s -X POST "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets" \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary "@$file"
+          done
