@@ -21,70 +21,70 @@ jobs:
         with:
           submodules: 'recursive'
 
-       - name: Download Android NDK
-       run: |
-         cd /tmp
-         wget -q https://dl.google.com/android/repository/android-ndk-r26d-linux.zip
-         unzip android-ndk-r26d-linux.zip
-         export ANDROID_NDK=/tmp/android-ndk-r26d
+      - name: Download Android NDK
+        run: |
+          cd /tmp
+          wget -q https://dl.google.com/android/repository/android-ndk-r26d-linux.zip
+          unzip android-ndk-r26d-linux.zip
+          export ANDROID_NDK=/tmp/android-ndk-r26d
 
-       - name: Download Boost source
-       run: |
-         cd /tmp
-         wget -q https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz
-         tar -xzf boost_1_87_0.tar.gz
+      - name: Download Boost source
+        run: |
+          cd /tmp
+          wget -q https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz
+          tar -xzf boost_1_87_0.tar.gz
 
-       - name: Build Boost for Android ARM64
-       run: |
-         cd /tmp/boost_1_87_0
-         export ANDROID_NDK=/tmp/android-ndk-r26d
-         export TOOLCHAIN=$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64
-         export PATH=$TOOLCHAIN/bin:$PATH
-         export AR=$TOOLCHAIN/bin/llvm-ar
-         export AS=$TOOLCHAIN/bin/llvm-as
-         export CC=$TOOLCHAIN/bin/aarch64-linux-android26-clang
-         export CXX=$TOOLCHAIN/bin/aarch64-linux-android26-clang++
-         export LD=$TOOLCHAIN/bin/ld
-         export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
-         export STRIP=$TOOLCHAIN/bin/llvm-strip
-         ./bootstrap.sh --with-toolset=clang
-         ./b2 variant=release link=static runtime-link=shared address-model=64 target-os=android --prefix=/tmp/boost-android install
+      - name: Build Boost for Android ARM64
+        run: |
+            cd /tmp/boost_1_87_0
+            export ANDROID_NDK=/tmp/android-ndk-r26d
+            export TOOLCHAIN=$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64
+            export PATH=$TOOLCHAIN/bin:$PATH
+            export AR=$TOOLCHAIN/bin/llvm-ar
+            export AS=$TOOLCHAIN/bin/llvm-as
+            export CC=$TOOLCHAIN/bin/aarch64-linux-android26-clang
+            export CXX=$TOOLCHAIN/bin/aarch64-linux-android26-clang++
+            export LD=$TOOLCHAIN/bin/ld
+            export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+            export STRIP=$TOOLCHAIN/bin/llvm-strip
+            ./bootstrap.sh --with-toolset=clang
+            ./b2 variant=release link=static runtime-link=shared address-model=64 target-os=android --prefix=/tmp/boost-android install
 
-       - name: Patch AddBoostIfNeeded for module mode
-       run: |
-         cd bitcoin-core
-         sed -i 's/find_package(Boost 1.74.0 REQUIRED CONFIG)/find_package(Boost 1.74.0 REQUIRED)/' cmake/module/AddBoostIfNeeded.cmake
+      - name: Patch AddBoostIfNeeded for module mode
+        run: |
+            cd bitcoin-core
+            sed -i 's/find_package(Boost 1.74.0 REQUIRED CONFIG)/find_package(Boost 1.74.0 REQUIRED)/' cmake/module/AddBoostIfNeeded.cmake
 
-       - name: Configure
-       run: |
-         cd bitcoin-core
-         export ANDROID_NDK=/tmp/android-ndk-r26d
-         cmake -B build-android -DBUILD_KERNEL_LIB=ON \
-           -DBUILD_SHARED_LIBS=ON \
-           -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
-           -DCMAKE_SYSTEM_NAME=Android \
-           -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a \
-           -DCMAKE_ANDROID_NDK=$ANDROID_NDK \
-           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-           -DENABLE_WALLET=OFF \
-           -DENABLE_IPC=OFF \
-           -DBUILD_GUI=OFF \
-           -DBUILD_TESTS=OFF \
-           -DBOOST_ROOT=/tmp/boost-android
+      - name: Configure
+        run: |
+            cd bitcoin-core
+            export ANDROID_NDK=/tmp/android-ndk-r26d
+            cmake -B build-android -DBUILD_KERNEL_LIB=ON \
+              -DBUILD_SHARED_LIBS=ON \
+              -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
+              -DCMAKE_SYSTEM_NAME=Android \
+              -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a \
+              -DCMAKE_ANDROID_NDK=$ANDROID_NDK \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DENABLE_WALLET=OFF \
+              -DENABLE_IPC=OFF \
+              -DBUILD_GUI=OFF \
+              -DBUILD_TESTS=OFF \
+              -DBOOST_ROOT=/tmp/boost-android
 
-       - name: Build
-       run: |
-         cd bitcoin-core
-         cmake --build build-android -j$(nproc) --target bitcoinkernel
+      - name: Build
+        run: |
+            cd bitcoin-core
+            cmake --build build-android -j$(nproc) --target bitcoinkernel
 
-       - name: Check build output
-       run: |
-         cd bitcoin-core
-         export ANDROID_NDK=/tmp/android-ndk-r26d
-         find build-android -name "*.so*" -type f
-         ls -lh build-android/lib/libbitcoinkernel.so*
-         file build-android/lib/libbitcoinkernel.so*
-          $ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-readelf -d build-android/lib/libbitcoinkernel.so | grep SONAME
+      - name: Check build output
+        run: |
+            cd bitcoin-core
+            export ANDROID_NDK=/tmp/android-ndk-r26d
+            find build-android -name "*.so*" -type f
+            ls -lh build-android/lib/libbitcoinkernel.so*
+            file build-android/lib/libbitcoinkernel.so*
+             $ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-readelf -d build-android/lib/libbitcoinkernel.so | grep SONAME
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -99,57 +99,57 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Download artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: libbitcoinkernel-android-arm64
+        uses: actions/download-artifact@v4
+        with:
+          name: libbitcoinkernel-android-arm64
 
       - name: List artifacts
-      run: |
-        ls -laR
+        run: |
+          ls -laR
 
       - name: Create metadata JSON
-      run: |
-        FILE=$(find . -name "libbitcoinkernel.so*" -type f | head -1)
-        if [ -z "$FILE" ]; then
-          echo "No libbitcoinkernel.so* file found"
-          exit 1
-        fi
-        FILE_INFO=$(file "$FILE" | sed 's/"/\\"/g')
-        cat > metadata.json << EOF
-        {
-          "library": "libbitcoinkernel",
-          "architecture": "android-arm64-v8a",
-          "file": "$(basename "$FILE")",
-          "size": $(stat -c%s "$FILE"),
-          "sha256": "$(sha256sum "$FILE" | cut -d' ' -f1)",
-          "arch": "$FILE_INFO",
-          "boost_version": "1.87.0",
-          "bitcoin_commit": "${{ github.sha }}",
-          "build_type": "RelWithDebInfo",
-          "release_name": "ReducedData Temporary Softfork (BIP-110/RDTS)"
-        }
-        EOF
-        cat metadata.json
+        run: |
+           FILE=$(find . -name "libbitcoinkernel.so*" -type f | head -1)
+           if [ -z "$FILE" ]; then
+             echo "No libbitcoinkernel.so* file found"
+             exit 1
+           fi
+           FILE_INFO=$(file "$FILE" | sed 's/"/\\"/g')
+           cat > metadata.json << EOF
+           {
+             "library": "libbitcoinkernel",
+             "architecture": "android-arm64-v8a",
+             "file": "$(basename "$FILE")",
+             "size": $(stat -c%s "$FILE"),
+             "sha256": "$(sha256sum "$FILE" | cut -d' ' -f1)",
+             "arch": "$FILE_INFO",
+             "boost_version": "1.87.0",
+             "bitcoin_commit": "${{ github.sha }}",
+             "build_type": "RelWithDebInfo",
+             "release_name": "ReducedData Temporary Softfork (BIP-110/RDTS)"
+           }
+           EOF
+           cat metadata.json
 
       - name: Create GitHub Release
-      run: |
-        TAG="bip110-rdts"
-        BODY="Auto-generated release for BIP-110/RDTS patches"
-        curl -s -X POST https://api.github.com/repos/${{ github.repository }}/releases \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Content-Type: application/json" \
-          -d "{\"tag_name\": \"$TAG\", \"name\": \"ReducedData Temporary Softfork (BIP-110/RDTS)\", \"body\": \"$BODY\", \"draft\": false, \"prerelease\": false}" > release.json
-        cat release.json
+        run: |
+           TAG="bip110-rdts"
+           BODY="Auto-generated release for BIP-110/RDTS patches"
+           curl -s -X POST https://api.github.com/repos/${{ github.repository }}/releases \
+             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+             -H "Content-Type: application/json" \
+             -d "{\"tag_name\": \"$TAG\", \"name\": \"ReducedData Temporary Softfork (BIP-110/RDTS)\", \"body\": \"$BODY\", \"draft\": false, \"prerelease\": false}" > release.json
+           cat release.json
 
       - name: Upload assets to release
-      run: |
-        RELEASE_ID=$(cat release.json | grep -o '"id": [0-9]*' | head -1 | cut -d' ' -f2)
-        echo "Uploading to release $RELEASE_ID"
-        for file in $(find . -name "*.so" -o -name "metadata.json"); do
-          [ -f "$file" ] || continue
-          echo "Uploading $file"
-          curl -s -X POST "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$(basename $file)" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/octet-stream" \
-            -T "$file"
-        done
+        run: |
+           RELEASE_ID=$(cat release.json | grep -o '"id": [0-9]*' | head -1 | cut -d' ' -f2)
+           echo "Uploading to release $RELEASE_ID"
+           for file in $(find . -name "*.so" -o -name "metadata.json"); do
+             [ -f "$file" ] || continue
+             echo "Uploading $file"
+             curl -s -X POST "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$(basename $file)" \
+               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+               -H "Content-Type: application/octet-stream" \
+               -T "$file"
+           done
