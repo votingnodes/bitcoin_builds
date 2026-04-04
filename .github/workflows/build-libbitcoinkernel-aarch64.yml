@@ -50,6 +50,29 @@ jobs:
             ./bootstrap.sh --with-toolset=clang
             ./b2 variant=release link=static runtime-link=shared address-model=64 target-os=android --prefix=/tmp/boost-android install
 
+      - name: Download libevent source
+        run: |
+          cd /tmp
+          wget -q https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz
+          tar -xzf libevent-2.1.12-stable.tar.gz
+
+      - name: Build libevent for Android ARM64
+        run: |
+            cd /tmp/libevent-2.1.12-stable
+            export ANDROID_NDK=/tmp/android-ndk-r26d
+            export TOOLCHAIN=$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64
+            export PATH=$TOOLCHAIN/bin:$PATH
+            export AR=$TOOLCHAIN/bin/llvm-ar
+            export AS=$TOOLCHAIN/bin/llvm-as
+            export CC=$TOOLCHAIN/bin/aarch64-linux-android26-clang
+            export CXX=$TOOLCHAIN/bin/aarch64-linux-android26-clang++
+            export LD=$TOOLCHAIN/bin/ld
+            export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+            export STRIP=$TOOLCHAIN/bin/llvm-strip
+            ./configure --host=aarch64-linux-android --prefix=/tmp/libevent-android --disable-shared --enable-static
+            make -j$(nproc)
+            make install
+
       - name: Patch AddBoostIfNeeded for module mode
         run: |
             cd bitcoin-core
@@ -57,21 +80,22 @@ jobs:
 
       - name: Configure
         run: |
-             cd bitcoin-core
-             export ANDROID_NDK=/tmp/android-ndk-r26d
-             cmake -B build-android -DBUILD_KERNEL_LIB=ON \
-               -DBUILD_SHARED_LIBS=ON \
-               -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
-               -DCMAKE_SYSTEM_NAME=Android \
-               -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a \
-               -DCMAKE_ANDROID_NDK=$ANDROID_NDK \
-               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-               -DENABLE_WALLET=OFF \
-               -DENABLE_IPC=OFF \
-               -DBUILD_GUI=OFF \
-               -DBUILD_TESTS=OFF \
-               -DBOOST_ROOT=/tmp/boost-android \
-               -DBoost_INCLUDE_DIR=/tmp/boost-android/include
+            cd bitcoin-core
+            export ANDROID_NDK=/tmp/android-ndk-r26d
+            export PKG_CONFIG_PATH=/tmp/libevent-android/lib/pkgconfig:$PKG_CONFIG_PATH
+            cmake -B build-android -DBUILD_KERNEL_LIB=ON \
+              -DBUILD_SHARED_LIBS=ON \
+              -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
+              -DCMAKE_SYSTEM_NAME=Android \
+              -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a \
+              -DCMAKE_ANDROID_NDK=$ANDROID_NDK \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DENABLE_WALLET=OFF \
+              -DENABLE_IPC=OFF \
+              -DBUILD_GUI=OFF \
+              -DBUILD_TESTS=OFF \
+              -DBOOST_ROOT=/tmp/boost-android \
+              -DBoost_INCLUDE_DIR=/tmp/boost-android/include
 
       - name: Build
         run: |
