@@ -106,23 +106,24 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: libbitcoinkernel-aarch64
-          path: artifacts
 
       - name: List artifacts
         run: |
-          cd artifacts
-          ls -la
+          ls -laR
 
       - name: Create metadata JSON
         run: |
-          cd artifacts
-          FILE=$(ls libbitcoinkernel.so* | head -1)
+          FILE=$(find . -name "libbitcoinkernel.so*" -type f | head -1)
+          if [ -z "$FILE" ]; then
+            echo "No libbitcoinkernel.so* file found"
+            exit 1
+          fi
           FILE_INFO=$(file "$FILE" | sed 's/"/\\"/g')
           cat > metadata.json << EOF
           {
             "library": "libbitcoinkernel",
             "architecture": "aarch64",
-            "file": "$FILE",
+            "file": "$(basename "$FILE")",
             "size": $(stat -c%s "$FILE"),
             "sha256": "$(sha256sum "$FILE" | cut -d' ' -f1)",
             "arch": "$FILE_INFO",
@@ -145,11 +146,10 @@ jobs:
 
       - name: Upload assets to release
         run: |
-          cd artifacts
           TAG="commit-${{ github.sha }}"
-          RELEASE_ID=$(cat ../release.json | grep -o '"id": [0-9]*' | head -1 | cut -d' ' -f2)
+          RELEASE_ID=$(cat release.json | grep -o '"id": [0-9]*' | head -1 | cut -d' ' -f2)
           echo "Uploading to release $RELEASE_ID"
-          for file in *.so metadata.json; do
+          for file in $(find . -name "*.so" -o -name "metadata.json"); do
             [ -f "$file" ] || continue
             echo "Uploading $file"
             curl -s -X POST "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$(basename $file)" \
