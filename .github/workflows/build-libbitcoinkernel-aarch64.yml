@@ -80,7 +80,7 @@ jobs:
       - name: Build
         run: |
           cd bitcoin-core
-          cmake --build build -j$(nproc) --target bitcoinkernel
+          cmake --build build -j$(nproc) --target all
 
       - name: Check build output
         run: |
