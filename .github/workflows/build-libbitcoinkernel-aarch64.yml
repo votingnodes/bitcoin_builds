@@ -108,14 +108,15 @@ jobs:
           name: libbitcoinkernel-aarch64
           path: artifacts
 
+      - name: List artifacts
+        run: |
+          cd artifacts
+          ls -la
+
       - name: Create metadata JSON
         run: |
           cd artifacts
           FILE=$(ls libbitcoinkernel.so* | head -1)
-          if [ -z "$FILE" ]; then
-            echo "No libbitcoinkernel.so* file found"
-            exit 1
-          fi
           FILE_INFO=$(file "$FILE" | sed 's/"/\\"/g')
           cat > metadata.json << EOF
           {
@@ -141,11 +142,6 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"tag_name\": \"$TAG\", \"name\": \"$TAG\", \"body\": \"$BODY\", \"draft\": false, \"prerelease\": false}" > release.json
           cat release.json
-
-      - name: List artifacts
-        run: |
-          cd artifacts
-          ls -la
 
       - name: Upload assets to release
         run: |
