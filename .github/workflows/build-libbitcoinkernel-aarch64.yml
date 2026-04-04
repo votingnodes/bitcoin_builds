@@ -86,15 +86,16 @@ jobs:
         run: |
           cd bitcoin-core
           find build-aarch64 -name "*.so*" -type f
-          ls -lh build-aarch64/src/libbitcoinkernel.so* 2>/dev/null || echo "No .so in src"
-          ls -lh build-aarch64/src/kernel/libbitcoinkernel.so* 2>/dev/null || echo "No .so in src/kernel"
+          ls -lh build-aarch64/lib/libbitcoinkernel.so*
+          file build-aarch64/lib/libbitcoinkernel.so*
+          aarch64-linux-gnu-readelf -d build-aarch64/lib/libbitcoinkernel.so | grep SONAME
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: libbitcoinkernel-aarch64
           path: |
-            bitcoin-core/build-aarch64/src/libbitcoinkernel.so*
+            bitcoin-core/build-aarch64/lib/libbitcoinkernel.so*
             bitcoin-core/aarch64-linux-gnu.cmake
 
   release:
