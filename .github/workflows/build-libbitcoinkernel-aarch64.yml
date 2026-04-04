@@ -87,7 +87,7 @@ jobs:
         with:
           name: libbitcoinkernel-aarch64
           path: |
-            bitcoin-core/build/src/libbitcoinkernel.so*
+            bitcoin-core/build/src/kernel/libbitcoinkernel.so*
             bitcoin-core/aarch64-linux-gnu.cmake
 
   release:
