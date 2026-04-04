@@ -68,7 +68,7 @@ jobs:
       - name: Configure
         run: |
           cd bitcoin-core
-          cmake -B build -DBUILD_KERNEL_LIB=ON \
+          cmake -B build-aarch64 -DBUILD_KERNEL_LIB=ON \
             -DBUILD_SHARED_LIBS=ON \
             -DCMAKE_TOOLCHAIN_FILE=aarch64-linux-gnu.cmake \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -80,19 +80,21 @@ jobs:
       - name: Build
         run: |
           cd bitcoin-core
-          cmake --build build -j$(nproc) --target all
+          cmake --build build-aarch64 -j$(nproc) --target bitcoinkernel
 
       - name: Check build output
         run: |
           cd bitcoin-core
-          ls -la build/src/kernel/
+          ls -lh build-aarch64/src/libbitcoinkernel.so*
+          file build-aarch64/src/libbitcoinkernel.so*
+          aarch64-linux-gnu-readelf -d build-aarch64/src/libbitcoinkernel.so | grep SONAME
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: libbitcoinkernel-aarch64
           path: |
-            bitcoin-core/build/src/kernel/libbitcoinkernel.so*
+            bitcoin-core/build-aarch64/src/libbitcoinkernel.so*
             bitcoin-core/aarch64-linux-gnu.cmake
 
   release:
