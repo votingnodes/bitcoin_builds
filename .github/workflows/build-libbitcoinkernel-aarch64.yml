@@ -102,7 +102,11 @@ jobs:
       - name: Create metadata JSON
         run: |
           cd artifacts
-          FILE="libbitcoinkernel.so"
+          FILE=$(ls libbitcoinkernel.so* | head -1)
+          if [ -z "$FILE" ]; then
+            echo "No libbitcoinkernel.so* file found"
+            exit 1
+          fi
           FILE_INFO=$(file "$FILE" | sed 's/"/\\"/g')
           cat > metadata.json << EOF
           {
