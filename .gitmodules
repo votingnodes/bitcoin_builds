@@ -1,3 +1,4 @@
 [submodule "bitcoin-core"]
 	path = bitcoin-core
-	url = https://github.com/bitcoin/bitcoin
+	url = https://github.com/votingnodes/bitcoin
+	branch = android-build-fix
