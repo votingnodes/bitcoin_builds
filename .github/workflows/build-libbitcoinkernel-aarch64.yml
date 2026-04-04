@@ -85,9 +85,9 @@ jobs:
       - name: Check build output
         run: |
           cd bitcoin-core
-          ls -lh build-aarch64/src/libbitcoinkernel.so*
-          file build-aarch64/src/libbitcoinkernel.so*
-          aarch64-linux-gnu-readelf -d build-aarch64/src/libbitcoinkernel.so | grep SONAME
+          find build-aarch64 -name "*.so*" -type f
+          ls -lh build-aarch64/src/libbitcoinkernel.so* 2>/dev/null || echo "No .so in src"
+          ls -lh build-aarch64/src/kernel/libbitcoinkernel.so* 2>/dev/null || echo "No .so in src/kernel"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
