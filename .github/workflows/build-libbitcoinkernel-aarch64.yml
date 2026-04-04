@@ -94,62 +94,62 @@ jobs:
             bitcoin-core/build-aarch64/lib/libbitcoinkernel.so*
             bitcoin-core/aarch64-linux-gnu.cmake
 
-   release:
-     needs: build
-     runs-on: ubuntu-24.04
-     steps:
-       - name: Download artifacts
-         uses: actions/download-artifact@v4
-         with:
-           name: libbitcoinkernel-android-arm64
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: libbitcoinkernel-android-arm64
 
-       - name: List artifacts
-         run: |
-           ls -laR
+      - name: List artifacts
+        run: |
+          ls -laR
 
-       - name: Create metadata JSON
-         run: |
-           FILE=$(find . -name "libbitcoinkernel.so*" -type f | head -1)
-           if [ -z "$FILE" ]; then
-             echo "No libbitcoinkernel.so* file found"
-             exit 1
-           fi
-           FILE_INFO=$(file "$FILE" | sed 's/"/\\"/g')
-           cat > metadata.json << EOF
-           {
-             "library": "libbitcoinkernel",
-             "architecture": "android-arm64-v8a",
-             "file": "$(basename "$FILE")",
-             "size": $(stat -c%s "$FILE"),
-             "sha256": "$(sha256sum "$FILE" | cut -d' ' -f1)",
-             "arch": "$FILE_INFO",
-             "boost_version": "1.87.0",
-             "bitcoin_commit": "${{ github.sha }}",
-             "build_type": "RelWithDebInfo",
-             "release_name": "ReducedData Temporary Softfork (BIP-110/RDTS)"
-           }
-           EOF
-           cat metadata.json
+      - name: Create metadata JSON
+        run: |
+          FILE=$(find . -name "libbitcoinkernel.so*" -type f | head -1)
+          if [ -z "$FILE" ]; then
+            echo "No libbitcoinkernel.so* file found"
+            exit 1
+          fi
+          FILE_INFO=$(file "$FILE" | sed 's/"/\\"/g')
+          cat > metadata.json << EOF
+          {
+            "library": "libbitcoinkernel",
+            "architecture": "android-arm64-v8a",
+            "file": "$(basename "$FILE")",
+            "size": $(stat -c%s "$FILE"),
+            "sha256": "$(sha256sum "$FILE" | cut -d' ' -f1)",
+            "arch": "$FILE_INFO",
+            "boost_version": "1.87.0",
+            "bitcoin_commit": "${{ github.sha }}",
+            "build_type": "RelWithDebInfo",
+            "release_name": "ReducedData Temporary Softfork (BIP-110/RDTS)"
+          }
+          EOF
+          cat metadata.json
 
-       - name: Create GitHub Release
-         run: |
-           TAG="bip110-rdts"
-           BODY="Auto-generated release for BIP-110/RDTS patches"
-           curl -s -X POST https://api.github.com/repos/${{ github.repository }}/releases \
-             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-             -H "Content-Type: application/json" \
-             -d "{\"tag_name\": \"$TAG\", \"name\": \"ReducedData Temporary Softfork (BIP-110/RDTS)\", \"body\": \"$BODY\", \"draft\": false, \"prerelease\": false}" > release.json
-           cat release.json
+      - name: Create GitHub Release
+        run: |
+          TAG="bip110-rdts"
+          BODY="Auto-generated release for BIP-110/RDTS patches"
+          curl -s -X POST https://api.github.com/repos/${{ github.repository }}/releases \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\": \"$TAG\", \"name\": \"ReducedData Temporary Softfork (BIP-110/RDTS)\", \"body\": \"$BODY\", \"draft\": false, \"prerelease\": false}" > release.json
+          cat release.json
 
-       - name: Upload assets to release
-         run: |
-           RELEASE_ID=$(cat release.json | grep -o '"id": [0-9]*' | head -1 | cut -d' ' -f2)
-           echo "Uploading to release $RELEASE_ID"
-           for file in $(find . -name "*.so" -o -name "metadata.json"); do
-             [ -f "$file" ] || continue
-             echo "Uploading $file"
-             curl -s -X POST "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$(basename $file)" \
-               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-               -H "Content-Type: application/octet-stream" \
-               -T "$file"
-           done
+      - name: Upload assets to release
+        run: |
+          RELEASE_ID=$(cat release.json | grep -o '"id": [0-9]*' | head -1 | cut -d' ' -f2)
+          echo "Uploading to release $RELEASE_ID"
+          for file in $(find . -name "*.so" -o -name "metadata.json"); do
+            [ -f "$file" ] || continue
+            echo "Uploading $file"
+            curl -s -X POST "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$(basename $file)" \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/octet-stream" \
+              -T "$file"
+          done
