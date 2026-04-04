@@ -80,7 +80,7 @@ jobs:
       - name: Build
         run: |
           cd bitcoin-core
-          cmake --build build -j$(nproc) --target libbitcoinkernel
+          cmake --build build -j$(nproc) --target bitcoinkernel
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
