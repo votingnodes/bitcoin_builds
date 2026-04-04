@@ -82,6 +82,11 @@ jobs:
           cd bitcoin-core
           cmake --build build -j$(nproc) --target bitcoinkernel
 
+      - name: Check build output
+        run: |
+          cd bitcoin-core
+          ls -la build/src/kernel/
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
