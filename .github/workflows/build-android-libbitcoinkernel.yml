@@ -2,9 +2,9 @@ name: Build Android arm64 libbitcoinkernel.so
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
   build:
@@ -46,3 +46,21 @@ jobs:
       with:
         name: libbitcoinkernel.so
         path: build/src/libbitcoinkernel.so
+  release:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: libbitcoinkernel.so
+    - name: Create metadata.json
+      run: |
+        echo '{"version": "'$GITHUB_SHA'", "arch": "arm64", "platform": "android"}' > metadata.json
+    - name: Release
+      run: |
+        TAG=$GITHUB_SHA
+        gh release create $TAG --generate-notes --title "Build $TAG" --prerelease libbitcoinkernel.so metadata.json
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
