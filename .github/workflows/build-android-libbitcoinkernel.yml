@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Clone Bitcoin Core
+      run: git clone https://github.com/bitcoin/bitcoin.git
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -26,6 +28,7 @@ jobs:
         echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
     - name: Configure and build
       run: |
+        cd bitcoin
         cmake -B build \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_SYSTEM_NAME=Android \
@@ -40,12 +43,13 @@ jobs:
         cmake --build build --target libbitcoinkernel -j$(nproc)
     - name: Strip library
       run: |
+        cd bitcoin
         $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-strip build/src/libbitcoinkernel.so
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: libbitcoinkernel.so
-        path: build/src/libbitcoinkernel.so
+        path: bitcoin/build/src/libbitcoinkernel.so
   release:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
