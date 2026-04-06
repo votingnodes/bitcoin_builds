@@ -1,0 +1,48 @@
+name: Build Android arm64 libbitcoinkernel.so
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y unzip cmake make
+    - name: Download Android NDK
+      run: |
+        export ANDROID_NDK_URL=https://dl.google.com/android/repository/android-ndk-r23c-linux.zip
+        export ANDROID_NDK_HOME=$PWD/android-ndk
+        mkdir -p $ANDROID_NDK_HOME
+        curl -L $ANDROID_NDK_URL -o android-ndk.zip
+        unzip android-ndk.zip -d $ANDROID_NDK_HOME
+        ANDROID_NDK_HOME=$ANDROID_NDK_HOME/android-ndk-r23c
+        echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+    - name: Configure and build
+      run: |
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_SYSTEM_NAME=Android \
+          -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a \
+          -DCMAKE_ANDROID_NDK=$ANDROID_NDK_HOME \
+          -DCMAKE_ANDROID_API=28 \
+          -DBUILD_KERNEL_LIB=ON \
+          -DENABLE_WALLET=OFF \
+          -DENABLE_IPC=OFF \
+          -DBUILD_GUI=OFF \
+          -DBUILD_TESTS=OFF
+        cmake --build build --target libbitcoinkernel -j$(nproc)
+    - name: Strip library
+      run: |
+        $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-strip build/src/libbitcoinkernel.so
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: libbitcoinkernel.so
+        path: build/src/libbitcoinkernel.so
