@@ -66,6 +66,8 @@ jobs:
           -DCMAKE_ANDROID_NDK=$ANDROID_NDK_HOME \
           -DCMAKE_ANDROID_API=28 \
           -DBOOST_ROOT=$PWD/../boost-install \
+          -DBoost_INCLUDE_DIR=$PWD/../boost-install/include \
+          -DBoost_LIBRARY_DIR=$PWD/../boost-install/lib \
           -DBUILD_KERNEL_LIB=ON \
           -DENABLE_WALLET=OFF \
           -DENABLE_IPC=OFF \
