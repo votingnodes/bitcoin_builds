@@ -12,7 +12,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Clone Bitcoin Core
-      run: git clone https://github.com/bitcoin/bitcoin.git
+      run: |
+        git clone https://github.com/bitcoin/bitcoin.git
+        sed -i 's/find_package(Boost 1.74.0 REQUIRED CONFIG)/find_package(Boost 1.74.0 REQUIRED)/' bitcoin/cmake/module/AddBoostIfNeeded.cmake
     - name: Install dependencies
       run: |
         sudo apt-get update
