@@ -33,8 +33,15 @@ jobs:
         tar -xzf boost.tar.gz
         cd boost-${BOOST_VERSION}
         ./bootstrap.sh
-        echo "using clang : android : $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android28-clang ;" > user-config.jam
-        ./b2 toolset=clang-android target-os=android architecture=arm abi=aapcs address-model=64 link=static threading=multi --with-libraries=system,filesystem,thread,chrono,program_options install --prefix=$PWD/../boost-install
+        cat > user-config.jam << EOF
+        using clang : 28 : $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android28-clang++ :
+          <archiver>$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-ar
+          <ranlib>$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-ranlib
+          <cxxflags>-fPIC
+          <linkflags>-fPIC
+        ;
+        EOF
+        ./b2 toolset=clang target-os=android architecture=arm abi=aapcs address-model=64 link=static threading=multi --with-libraries=system,filesystem,thread,chrono,program_options install --prefix=$PWD/../boost-install
     - name: Configure and build
       run: |
         cd bitcoin
