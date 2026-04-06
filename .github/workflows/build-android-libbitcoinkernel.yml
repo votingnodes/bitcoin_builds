@@ -41,7 +41,21 @@ jobs:
           <linkflags>-fPIC
         ;
         EOF
-        ./b2 toolset=clang target-os=android architecture=arm abi=aapcs address-model=64 link=static threading=multi --with-libraries=system,filesystem,thread,chrono,program_options install --prefix=$PWD/../boost-install
+        ./b2 \
+          toolset=clang \
+          target-os=android \
+          architecture=arm \
+          abi=aapcs \
+          address-model=64 \
+          link=static \
+          threading=multi \
+          --with-system \
+          --with-filesystem \
+          --with-thread \
+          --with-chrono \
+          --with-program_options \
+          install \
+          --prefix=$PWD/../boost-install
     - name: Configure and build
       run: |
         cd bitcoin
